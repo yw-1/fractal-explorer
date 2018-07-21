@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <SDL2/SDL.h>
+#include "calc.h"
 
 void draw_box(SDL_Surface *surface, int x, int y, int w, int h)
 {
@@ -53,14 +55,42 @@ void draw_box(SDL_Surface *surface, int x, int y, int w, int h)
 
 void set_palette(Uint32 *palette, Uint32 palette_mask) {
 	int r, g, b;
+	int iter = palette_mask + 1;
 
-	for (int i=0; i<=palette_mask; i++) {
-		r = i*palette_mask/300;
-		g = i*0.5*(palette_mask*sin(0.01*i)+palette_mask)/300;
-		b = i*0.5*(palette_mask*cos(0.01*i)+palette_mask)/300;
+	for (int i=0; i < iter; i++) {
+		if(i < iter/6) {
+			r = 155;
+			g = (i % (iter/6))*(255/(iter/6));
+			b = 0;
+		}else if(i < 2*iter/6) {
+			r = 155 - (i % (iter/6))*(255/(iter/6));
+			g = 155;
+			b = 0;
+		}else if(i < 3*iter/6) {
+			r = 0;
+			b = (i % (iter/6))*(255/(iter/6));
+			g = 155;
+		}else if(i < 4*iter/6) {
+			r = 0;
+			g = 155 - (i % (iter/6))*(255/(iter/6));
+			b = 155;
+		}else if(i < 5*iter/6) {
+			r = (i % (iter/6))*(255/(iter/6));
+			g = 0;
+			b = 155;
+		}else{
+			r = 155;
+			g = 0;
+			b = 155 - (i % (iter/6))*(255/(iter/6));
+		}
 		palette[i] = (r & 0xff)<<16 | (g & 0xff)<<8 | (b & 0xff);
 	}
 }
+void draw_mset(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
+void draw_lzfrac(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
+void draw_trfrac(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
+void draw_lemon(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
+void draw_test(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
 
 int main(int argc, char *argv[])
 {	
@@ -76,8 +106,8 @@ int main(int argc, char *argv[])
 	double zoom = 0.01, zoom_rate = 0.1;
 	int iter = 100;
 
-	Uint32 palette[512];
-	Uint32 palette_mask = 0x1ff;
+	Uint32 *palette = malloc(sizeof(Uint32)*iter);
+	Uint32 palette_mask = iter - 1;
 
 	set_palette(palette, palette_mask);
 
@@ -92,13 +122,44 @@ int main(int argc, char *argv[])
 	surface = SDL_GetWindowSurface(window);
 	surface2 = SDL_CreateRGBSurface(0, sw, sh, 32, 0, 0, 0, 0);
 
+	void (*drawfrac)(SDL_Surface *, int, int, int, double, double, double, Uint32 *, Uint32);
+
+	drawfrac = (void *)&draw_test;
+
+	rpn *expr, *z;
+	if (argc > 1) {
+		switch (atoi(argv[1])) {
+		case 0:
+			printf("%s\n", argv[2]);
+			expr = makerpn(argv[2]);
+			z = evalrpn(expr,0,0,0,0,0,0);
+			printf("= %f + i%f\n", z->x, z->y);
+
+			return 1;
+			break;
+		case 1:
+			zoom = 0.1;
+			drawfrac = (void *)&draw_trfrac;
+			break;
+		case 2:
+			zoom = 0.01;
+			drawfrac = (void *)&draw_lemon;
+			break;
+		case 4:
+			zoom = 1.5;
+			iter = 200;
+			drawfrac = (void *)&draw_lzfrac;
+			break;
+		case 5:
+			zoom = 0.1;
+			drawfrac = (void *)&draw_mset;
+			break;
+		}
+	}
 
 	while (!end) {
 		if (redraw) {
-			draw_mset(surface2, sw, sh, iter, zoom, x0, y0, palette, palette_mask);
-			//draw_trfrac(surface2, sw, sh, iter, zoom, x0, y0, palette, palette_mask);
-			//draw_lzfrac(surface2, sw, sh, iter, zoom, x0, y0, palette, palette_mask);
-			//draw_lemon(surface2, sw, sh, iter, zoom, x0, y0, palette, palette_mask);
+			(*drawfrac)(surface2, sw, sh, iter, zoom, x0, y0, palette, palette_mask);
 
 			SDL_BlitSurface(surface2, 0, surface, 0);
 			SDL_UpdateWindowSurface(window);
@@ -192,6 +253,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	free(palette);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 

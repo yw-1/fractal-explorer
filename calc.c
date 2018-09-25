@@ -31,6 +31,9 @@ rpn *makerpn(char *in)
 				ret[j].x = atof(num);
 				ret[j].y = 0;
 				num[0] = 0;
+
+				printf("%lf\n", ret[j].x);
+
 				j++;
 			}
 
@@ -67,14 +70,17 @@ rpn *makerpn(char *in)
 	if (strlen(num)>0) {
 		ret[j].sym = '#';
 		ret[j].x = atof(num);
+		ret[j].y = 0;
+		num[0] = 0;
 		j++;
 	}
 
-	s--;
+	//s--;
 	while (s > 0) ret[j++].sym = stack_sym[--s];
 
 	ret[j].sym = 0;
 
+	printf("***\n");
 	return ret;
 }
 

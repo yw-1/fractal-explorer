@@ -52,6 +52,9 @@ void draw_trfrac(SDL_Surface *surface, int w, int h, int iter, double zoom, doub
 				cexp2(&u, &v, u, v, u, v);
 				cexp2(&u, &v, u, v, x, y);
 
+				//u = fabs(u);
+				//v = fabs(v);
+
 				if (u*u + v*v > 4.0) break;
 			}
 

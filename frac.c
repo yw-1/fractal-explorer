@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
 #include <SDL2/SDL.h>
 #include "calc.h"
@@ -90,7 +91,6 @@ void draw_mset(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, dou
 void draw_lzfrac(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
 void draw_trfrac(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
 void draw_lemon(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
-void draw_test(SDL_Surface *surface2, int sw, int sh, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask);
 
 int main(int argc, char *argv[])
 {	
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 	int mx, my;
 
 	double x0 = 0, y0 = 0;
-	double zoom = 0.01, zoom_rate = 0.1;
+	double zoom = 0.007, zoom_rate = 0.1;
 	int iter = 100;
 
 	Uint32 *palette = malloc(sizeof(Uint32)*iter);
@@ -124,19 +124,13 @@ int main(int argc, char *argv[])
 
 	void (*drawfrac)(SDL_Surface *, int, int, int, double, double, double, Uint32 *, Uint32);
 
-	drawfrac = (void *)&draw_test;
+	drawfrac = (void *)&draw_mset;
 
-	rpn *expr, *z;
-	if (argc > 1) {
-		switch (atoi(argv[1])) {
-		case 0:
-			printf("%s\n", argv[2]);
-			expr = makerpn(argv[2]);
-			z = evalrpn(expr,0,0,0,0,0,0);
-			printf("= %f + i%f\n", z->x, z->y);
+	int opt = getopt(argc, argv, "t:");
+	int n;
 
-			return 1;
-			break;
+	if (opt == 't') {
+		switch (atoi(optarg)) {
 		case 1:
 			zoom = 0.1;
 			drawfrac = (void *)&draw_trfrac;
@@ -145,15 +139,17 @@ int main(int argc, char *argv[])
 			zoom = 0.01;
 			drawfrac = (void *)&draw_lemon;
 			break;
-		case 4:
+		case 3:
 			zoom = 1.5;
 			iter = 200;
 			drawfrac = (void *)&draw_lzfrac;
 			break;
-		case 5:
-			zoom = 0.1;
-			drawfrac = (void *)&draw_mset;
-			break;
+		default:
+			printf("usage: ./frac -t ftype\n\n");
+			printf("mandelbrot: ./frac -t 0\n");
+			printf("tetration: ./frac -t 1\n");
+			printf("lemon fractal: ./frac -t 2\n");
+			printf("lorenz fractal: ./frac -t 3\n");
 		}
 	}
 

@@ -1,28 +1,31 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 
-void dft (double *x, double *xx, int n)
+void cmul222(double *u, double *v, double u1, double v1, double u2, double v2)
 {
-	double *g1 = malloc(sizeof(double)*n/2);
-	double *g2 = malloc(sizeof(double)*n/2);
-	double sum;
+	*u = u1*u2 - v1*v2;
+	*v = u1*v2 - u2*v1;
+}
 
-	for (int i=0; i<n/2; i++) {
-		sum = 0;
-		g1[i] = 0;
-		g2[i] = 0;
-		for (int j=0; j<n/2; j++) {
-			g1[i] += x[2*j]*cos(4.0*M_PI*i*j/n);
-			g2[i] += x[2*j + 1]*cos(4.0*M_PI*i*j/n);
-		}
+void cexp222(double *u, double *v, double x, double y, double a, double b)
+{
+	double mag, arg, lnz, argz;
 
-		g2[i] *= cos(2.0*M_PI*i/n);
-		xx[i] = g1[i] + g2[i];
-		xx[i + n/2] = g1[i] - g2[i];
-	}
+	lnz = x*x + y*y;
 
-	free(g1);
-	free(g2);
+	//if (lnz == 0) {
+	//	*u = 0;
+	//	*v = 0;
+	//}else{
+	  lnz = 0.5 * log(lnz + 0.00001);
+	  argz = atan2(y, x);
+
+	  mag = exp(a*lnz - b*argz);
+	  arg = a*argz + b*lnz;
+
+	  *u = mag * cos(arg);
+	  *v = mag * sin(arg);
+	//}
 }
 
 void draw_test(SDL_Surface *surface, int w, int h, int iter, double zoom, double x0, double y0, Uint32 *palette, Uint32 palette_mask)
@@ -36,26 +39,21 @@ void draw_test(SDL_Surface *surface, int w, int h, int iter, double zoom, double
 
 	SDL_LockSurface(surface);
 
-	int num = 64;
-
-	double f[num];
 	for (int yy=0; yy<h; yy++) {
 		for (int xx=0; xx<w; xx++) {
 			x = (xx - w/2)*zoom + x0;
 			y = (yy - h/2)*zoom + y0;
 
-			u = x;
-			v = y;
+			u = 0;
+			v = 0;
 
-			for (i=0; i<iter; i++) {
-				up = u*u - v*v + x;
-				vp = 2*u*v + y;
-
-				u = fabs(up);
-				v = fabs(vp);
+			for (i=0; i<10000; i++) {
+				cexp222(&up, &vp, u, v, u, v);
+				cexp222(&u, &v, up, vp, x, y);
 
 				if (u*u + v*v > 4) break;
 			}
+
 			if (i >= iter) c = 0x000000;
 				else c = palette[i & palette_mask];
 

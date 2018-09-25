@@ -24,10 +24,10 @@ void draw_mset(SDL_Surface *surface, int w, int h, int iter, double zoom, double
 				up = u*u - v*v + x;
 				vp = 2*u*v + y;
 
-				u =fabs(up);
-				v =fabs(vp);
+				u = up;
+				v = vp;
 
-				if (u*u + v*v > 4.0) break;
+				if (u*u + v*v > 4) break;
 			}
 
 			if (i >= iter) c = 0x000000;

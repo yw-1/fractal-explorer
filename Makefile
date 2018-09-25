@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-I.
-LIBS=-lm -lSDL2
+LIBS=-lm -lSDL2 -lgmp
 DEPS=calc.h
 OBJ=frac.o calc.o mset.o trfrac.o lzfrac.o lemon.o test.o
 
